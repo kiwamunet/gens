@@ -56,6 +56,39 @@ g.IsGuregu = &genGuregu
 g.Gen()
 ```
 
+## OutPut Ex
+
+```Golang
+package model
+
+import (
+	"database/sql"
+	"time"
+
+	"github.com/guregu/null"
+)
+
+var (
+	_ = time.Second
+	_ = sql.LevelDefault
+	_ = null.Bool{}
+)
+
+type User struct {
+	UserID       string      `gorm:"column:userId;primary_key" json:"userId"`
+	Address      null.String `gorm:"column:address" json:"address"`
+	TelNumber    null.String `gorm:"column:telNumber" json:"telNumber"`
+	UserStatus   null.String `gorm:"column:userStatus" json:"userStatus"`
+	Email        null.String `gorm:"column:email" json:"email"`
+	CreateDate   time.Time   `gorm:"column:createDate" json:"createDate"`
+	UpdateDate   time.Time   `gorm:"column:updateDate" json:"updateDate"`
+}
+
+// TableName sets the insert table name for this struct type
+func (u *User) TableName() string {
+	return "user"
+}
+```
 ## Supported Databases
 
 Currently Supported

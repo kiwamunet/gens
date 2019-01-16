@@ -18,9 +18,6 @@ type ModelInfo struct {
 	Fields          []string
 }
 
-// commonInitialisms is a set of common initialisms.
-// Only add entries that are highly unlikely to be non-initialisms.
-// For instance, "ID" is fine (Freudian code is rare), but "AND" is not.
 var commonInitialisms = map[string]bool{
 	"API":   true,
 	"ASCII": true,
@@ -99,15 +96,13 @@ func GenerateStruct(db *sql.DB, databaseName string, tableName string, structNam
 	}
 
 	fields := generateFieldsTypes(db, *columnDataTypes, 0, jsonAnnotation, gormAnnotation, gureguTypes)
-	var modelInfo = &ModelInfo{
+	return &ModelInfo{
 		PackageName:     pkgName,
 		StructName:      structName,
 		TableName:       tableName,
 		ShortStructName: strings.ToLower(string(structName[0])),
 		Fields:          fields,
-	}
-
-	return modelInfo, nil
+	}, nil
 }
 
 // getColumnsFromMysqlTable Select column details from information schema and return map of map
@@ -168,7 +163,6 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		}
 
 		primary := ""
-
 		if mysqlType["primary"] == "PRI" {
 			primary = ";primary_key"
 		}
@@ -182,10 +176,6 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		}
 
 		pos, _ := strconv.Atoi(mysqlType["position"])
-
-		// Get the corresponding go value type for this mysql type
-		// If the guregu (https://github.com/guregu/null) CLI option is passed use its types, otherwise use go's sql.NullX
-
 		fieldName := fmtFieldName(stringifyFirstChar(key))
 
 		var annotations []string

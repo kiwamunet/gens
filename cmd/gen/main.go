@@ -21,7 +21,7 @@ var (
 func init() {
 	// Setup goopts
 	goopt.Description = func() string {
-		return "ORM and RESTful API generator for Mysql"
+		return "ORM generator for Mysql"
 	}
 	goopt.Version = "0.1"
 	goopt.Summary = `gen --connstr "user:password@/dbname" --package pkgName --database databaseName --table tableName --output outputdir [--json] [--gorm] [--guregu]`
