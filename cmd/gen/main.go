@@ -24,7 +24,7 @@ func init() {
 		return "ORM and RESTful API generator for Mysql"
 	}
 	goopt.Version = "0.1"
-	goopt.Summary = `gen [-v] --connstr "user:password@/dbname" --package pkgName --database databaseName --table tableName [--json] [--gorm] [--guregu]`
+	goopt.Summary = `gen --connstr "user:password@/dbname" --package pkgName --database databaseName --table tableName --output outputdir [--json] [--gorm] [--guregu]`
 
 	//Parse options
 	goopt.Parse(nil)
