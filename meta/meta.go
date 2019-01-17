@@ -111,7 +111,7 @@ func getColumnsFromMysqlTable(db *sql.DB, databaseName, tableName string) (*map[
 	// Store colum as map of maps
 	columnDataTypes := make(map[string]map[string]string)
 	// Select columnd data from INFORMATION_SCHEMA
-	columnDataTypeQuery := "SELECT COLUMN_NAME, COLUMN_KEY, DATA_TYPE, IS_NULLABLE, ORDINAL_POSITION, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name = ?"
+	columnDataTypeQuery := "SELECT COLUMN_NAME, COLUMN_KEY, COLUMN_TYPE, DATA_TYPE, IS_NULLABLE, ORDINAL_POSITION, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name = ?"
 
 	rows, err := db.Query(columnDataTypeQuery, databaseName, tableName)
 	if err != nil {
@@ -127,12 +127,13 @@ func getColumnsFromMysqlTable(db *sql.DB, databaseName, tableName string) (*map[
 	for rows.Next() {
 		var column string
 		var columnKey string
+		var columnType string
 		var dataType string
 		var nullable string
 		var ordinalPos string
 		var autoIncrement string
-		rows.Scan(&column, &columnKey, &dataType, &nullable, &ordinalPos, &autoIncrement)
-		columnDataTypes[column] = map[string]string{"value": dataType, "nullable": nullable, "primary": columnKey, "position": ordinalPos, "autoIncrement": autoIncrement}
+		rows.Scan(&column, &columnKey, &columnType, &dataType, &nullable, &ordinalPos, &autoIncrement)
+		columnDataTypes[column] = map[string]string{"value": dataType, "nullable": nullable, "primary": columnKey, "position": ordinalPos, "autoIncrement": autoIncrement, "columnType": columnType}
 	}
 
 	return &columnDataTypes, err
@@ -180,7 +181,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 
 		var annotations []string
 		if gormAnnotation == true {
-			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s\"", key, primary))
+			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s;type:%s\"", key, primary, mysqlType["columnType"]))
 		}
 		if jsonAnnotation == true {
 			annotations = append(annotations, fmt.Sprintf("json:\"%s\"", key))
