@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/guregu/null"
 )
 
 // fmtFieldName formats a string as a struct key
@@ -113,4 +115,11 @@ func stringifyFirstChar(str string) string {
 	}
 
 	return intToWordMap[i] + "_" + str[1:]
+}
+
+func NullString(ns null.String) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return ""
 }
