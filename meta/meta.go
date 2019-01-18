@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"strings"
@@ -131,9 +132,9 @@ func getColumnsFromMysqlTable(db *sql.DB, databaseName, tableName string) (*map[
 		var dataType string
 		var nullable string
 		var ordinalPos string
-		var autoIncrement string
-		rows.Scan(&column, &columnKey, &columnType, &dataType, &nullable, &ordinalPos, &autoIncrement)
-		columnDataTypes[column] = map[string]string{"value": dataType, "nullable": nullable, "primary": columnKey, "position": ordinalPos, "autoIncrement": autoIncrement, "columnType": columnType}
+		var extra string
+		rows.Scan(&column, &columnKey, &columnType, &dataType, &nullable, &ordinalPos, &extra)
+		columnDataTypes[column] = map[string]string{"value": dataType, "nullable": nullable, "primary": columnKey, "position": ordinalPos, "extra": extra, "columnType": columnType}
 	}
 
 	return &columnDataTypes, err
@@ -169,7 +170,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		}
 
 		if mysqlType["primary"] == "PRI" && valueType == "int" {
-			if mysqlType["autoIncrement"] == "auto_increment" {
+			if mysqlType["extra"] == "auto_increment" {
 				primary = primary + ";auto_increment:true"
 			} else {
 				primary = primary + ";auto_increment:false"
@@ -201,6 +202,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		}
 	}
 
+	log.Println(len(m))
 	fields := make([]string, 0, len(m))
 	for i := 1; i < len(m)+1; i++ {
 		fields = append(fields, m[i])
