@@ -75,12 +75,13 @@ var (
 )
 
 type User struct {
-	UserID       string      `gorm:"column:userId;primary_key;type:varchar(128)" json:"userId"`
-	Address      null.String `gorm:"column:address;type:varchar(128)" json:"address"`
-	TelNumber    null.String `gorm:"column:telNumber;type:varchar(128)" json:"telNumber"`
-	Email        null.String `gorm:"column:email;type:varchar(128)" json:"email"`
-	CreateDate   time.Time   `gorm:"column:createDate;type:timestamp" json:"createDate"`
-	UpdateDate   time.Time   `gorm:"column:updateDate;type:timestamp" json:"updateDate"`
+	UserID       string      `gorm:"column:userId;primary_key;type:varchar(128) " json:"userId"`
+	Address      null.String `gorm:"column:address;type:varchar(128) " json:"address"`
+	TelNumber    null.String `gorm:"column:telNumber;type:varchar(128) " json:"telNumber"`
+	UserStatus   null.String `gorm:"column:userStatus;type:enum('AVAILABLE','BLOCKED') " json:"userStatus"`
+	Email        null.String `gorm:"column:email;type:varchar(128) " json:"email"`
+	CreateDate   time.Time   `gorm:"column:createDate;type:timestamp DEFAULT CURRENT_TIMESTAMP" json:"createDate"`
+	UpdateDate   time.Time   `gorm:"column:updateDate;type:timestamp DEFAULT CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP" json:"updateDate"`
 }
 
 // TableName sets the insert table name for this struct type
