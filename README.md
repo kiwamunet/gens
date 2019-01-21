@@ -75,11 +75,11 @@ var (
 )
 
 type User struct {
-	UserID       string      `gorm:"column:userId;primary_key;type:varchar(128) " json:"userId"`
-	Address      null.String `gorm:"column:address;type:varchar(128) " json:"address"`
-	TelNumber    null.String `gorm:"column:telNumber;type:varchar(128) " json:"telNumber"`
-	UserStatus   null.String `gorm:"column:userStatus;type:enum('AVAILABLE','BLOCKED') " json:"userStatus"`
-	Email        null.String `gorm:"column:email;type:varchar(128) " json:"email"`
+	UserID       string      `gorm:"column:userId;primary_key;type:varchar(128)" json:"userId"`
+	Address      null.String `gorm:"column:address;index;type:varchar(128)" json:"address"`
+	TelNumber    null.String `gorm:"column:telNumber;index;type:varchar(128)" json:"telNumber"`
+	UserStatus   null.String `gorm:"column:userStatus;index;type:enum('AVAILABLE','BLOCKED')" json:"userStatus"`
+	Email        null.String `gorm:"column:email;type:varchar(128)" json:"email"`
 	CreateDate   time.Time   `gorm:"column:createDate;type:timestamp DEFAULT CURRENT_TIMESTAMP" json:"createDate"`
 	UpdateDate   time.Time   `gorm:"column:updateDate;type:timestamp DEFAULT CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP" json:"updateDate"`
 }

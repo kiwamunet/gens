@@ -113,7 +113,9 @@ func getColumnsFromMysqlTable(db *sql.DB, databaseName, tableName string) (*map[
 	// Store colum as map of maps
 	columnDataTypes := make(map[string]map[string]string)
 	// Select columnd data from INFORMATION_SCHEMA
-	columnDataTypeQuery := "SELECT COLUMN_NAME, COLUMN_KEY, COLUMN_TYPE, COLUMN_DEFAULT, DATA_TYPE, IS_NULLABLE, ORDINAL_POSITION, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name = ?"
+	// columnDataTypeQuery := "SELECT COLUMN_NAME, COLUMN_KEY, COLUMN_TYPE, COLUMN_DEFAULT, DATA_TYPE, IS_NULLABLE, ORDINAL_POSITION, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND table_name = ?"
+
+	columnDataTypeQuery := "SELECT C.COLUMN_NAME, C.COLUMN_KEY, C.COLUMN_TYPE, C.COLUMN_DEFAULT, C.DATA_TYPE, C.IS_NULLABLE, C.ORDINAL_POSITION, C.EXTRA, S.INDEX_NAME FROM INFORMATION_SCHEMA.COLUMNS AS C LEFT JOIN INFORMATION_SCHEMA.STATISTICS AS S ON C.TABLE_NAME = S.TABLE_NAME AND C.COLUMN_NAME = S.COLUMN_NAME AND C.TABLE_SCHEMA = S.TABLE_SCHEMA WHERE C.TABLE_SCHEMA = ? AND C.TABLE_NAME = ?"
 
 	rows, err := db.Query(columnDataTypeQuery, databaseName, tableName)
 	if err != nil {
@@ -135,8 +137,9 @@ func getColumnsFromMysqlTable(db *sql.DB, databaseName, tableName string) (*map[
 		var nullable string
 		var ordinalPos string
 		var extra string
-		rows.Scan(&column, &columnKey, &columnType, &columnDefault, &dataType, &nullable, &ordinalPos, &extra)
-		columnDataTypes[column] = map[string]string{"value": dataType, "nullable": nullable, "primary": columnKey, "position": ordinalPos, "extra": extra, "columnType": columnType, "columnDefault": NullString(columnDefault)}
+		var index null.String
+		rows.Scan(&column, &columnKey, &columnType, &columnDefault, &dataType, &nullable, &ordinalPos, &extra, &index)
+		columnDataTypes[column] = map[string]string{"value": dataType, "nullable": nullable, "primary": columnKey, "position": ordinalPos, "extra": extra, "columnType": columnType, "columnDefault": NullString(columnDefault), "index": NullString(index)}
 	}
 	return &columnDataTypes, err
 }
@@ -152,6 +155,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 
 	m := map[int]string{}
 	for _, key := range keys {
+		fieldName := fmtFieldName(stringifyFirstChar(key))
 		mysqlType := obj[key]
 
 		nullable := false
@@ -173,21 +177,24 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 				primary = primary + ";auto_increment:false"
 			}
 		}
+		index := ""
+		if strings.ToLower(mysqlType["index"]) == strings.ToLower(fieldName) {
+			index = ";index"
+		}
 
 		defaultValue := ""
 		if mysqlType["columnDefault"] != "" {
-			defaultValue = fmt.Sprintf("DEFAULT %s", mysqlType["columnDefault"])
+			defaultValue = fmt.Sprintf(" DEFAULT %s", mysqlType["columnDefault"])
 			if mysqlType["extra"] != "" && mysqlType["extra"] != "auto_increment" {
 				defaultValue = fmt.Sprintf("%s %s", defaultValue, mysqlType["extra"])
 			}
 		}
 
 		pos, _ := strconv.Atoi(mysqlType["position"])
-		fieldName := fmtFieldName(stringifyFirstChar(key))
 
 		var annotations []string
 		if gormAnnotation == true {
-			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s;type:%s %s\"", key, primary, mysqlType["columnType"], defaultValue))
+			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s%s;type:%s%s\"", key, primary, index, mysqlType["columnType"], defaultValue))
 		}
 		if jsonAnnotation == true {
 			annotations = append(annotations, fmt.Sprintf("json:\"%s\"", key))
