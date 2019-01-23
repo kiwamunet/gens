@@ -82,10 +82,10 @@ const (
 	gureguNullString = "null.String"
 	sqlNullString    = "sql.NullString"
 	gureguNullTime   = "null.Time"
-	golangTime       = "time.Time"
+	golangTime       = "*time.Time"
 	gureguNullBool   = "null.Bool"
 	sqlNullBool      = "sql.NullBool"
-	golangbool       = "bool"
+	golangBool       = "bool"
 )
 
 // GenerateStruct generates a struct for the given table.
@@ -239,7 +239,7 @@ func sqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool) string {
 			}
 			return sqlNullBool
 		}
-		return golangbool
+		return golangBool
 	case "bigint":
 		if nullable {
 			if gureguTypes {
