@@ -69,23 +69,25 @@ var intToWordMap = []string{
 
 // Constants for return types of golang
 const (
-	golangByteArray  = "[]byte"
-	gureguNullInt    = "null.Int"
-	sqlNullInt       = "sql.NullInt64"
-	golangInt        = "int"
-	golangInt64      = "int64"
-	gureguNullFloat  = "null.Float"
-	sqlNullFloat     = "sql.NullFloat64"
-	golangFloat      = "float"
-	golangFloat32    = "float32"
-	golangFloat64    = "float64"
-	gureguNullString = "null.String"
-	sqlNullString    = "sql.NullString"
-	gureguNullTime   = "null.Time"
-	golangTime       = "*time.Time"
-	gureguNullBool   = "null.Bool"
-	sqlNullBool      = "sql.NullBool"
-	golangBool       = "bool"
+	golangByteArray          = "[]byte"
+	gureguNullInt            = "null.Int"
+	sqlNullInt               = "sql.NullInt64"
+	golangInt                = "int"
+	golangInt64              = "int64"
+	gureguNullFloat          = "null.Float"
+	sqlNullFloat             = "sql.NullFloat64"
+	golangFloat              = "float"
+	golangFloat32            = "float32"
+	golangFloat64            = "float64"
+	gureguNullString         = "null.String"
+	sqlNullString            = "sql.NullString"
+	gureguNulljsonRawMessage = "*json.RawMessage"
+	sqlNulljsonRawMessage    = "*json.RawMessage"
+	gureguNullTime           = "null.Time"
+	golangTime               = "*time.Time"
+	gureguNullBool           = "null.Bool"
+	sqlNullBool              = "sql.NullBool"
+	golangBool               = "bool"
 )
 
 // GenerateStruct generates a struct for the given table.
@@ -248,7 +250,7 @@ func sqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool) string {
 			return sqlNullInt
 		}
 		return golangInt64
-	case "char", "enum", "varchar", "longtext", "mediumtext", "text", "tinytext":
+	case "char", "enum", "varchar", "mediumtext", "text", "tinytext":
 		if nullable {
 			if gureguTypes {
 				return gureguNullString
@@ -256,6 +258,14 @@ func sqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool) string {
 			return sqlNullString
 		}
 		return "string"
+	case "longtext":
+		if nullable {
+			if gureguTypes {
+				return gureguNulljsonRawMessage
+			}
+			return sqlNulljsonRawMessage
+		}
+		return "json.RawMessage"
 	case "date", "datetime", "time", "timestamp":
 		if nullable && gureguTypes {
 			return gureguNullTime
