@@ -4,6 +4,7 @@ var ModelTmpl = `package {{.PackageName}}
 
 import (
     "database/sql"
+    "encoding/json"
     "time"
 
     "github.com/guregu/null"
