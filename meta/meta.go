@@ -83,8 +83,8 @@ const (
 	sqlNullString            = "sql.NullString"
 	gureguNulljsonRawMessage = "*json.RawMessage"
 	sqlNulljsonRawMessage    = "*json.RawMessage"
-	gureguNullTime           = "null.Time"
-	golangTime               = "*time.Time"
+	gureguNullTime           = "*time.Time"
+	golangTime               = "time.Time"
 	gureguNullBool           = "null.Bool"
 	sqlNullBool              = "sql.NullBool"
 	golangBool               = "bool"
@@ -193,10 +193,14 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		}
 
 		pos, _ := strconv.Atoi(mysqlType["position"])
+		notNull := ""
+		if !nullable {
+			notNull = " NOT NULL"
+		}
 
 		var annotations []string
 		if gormAnnotation == true {
-			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s%s;type:%s%s\"", key, primary, index, mysqlType["columnType"], defaultValue))
+			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s%s;type:%s%s%s\"", key, primary, index, mysqlType["columnType"], notNull, defaultValue))
 		}
 		if jsonAnnotation == true {
 			annotations = append(annotations, fmt.Sprintf("json:\"%s\"", key))
