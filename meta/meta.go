@@ -175,6 +175,11 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		if mysqlType["primary"] == "PRI" && valueType == "int" {
 			if strings.Contains(mysqlType["extra"], "auto_increment") {
 				primary = primary + ";auto_increment:true"
+				if gureguTypes {
+					valueType = gureguNullInt
+				} else {
+					valueType = sqlNullInt
+				}
 			} else {
 				primary = primary + ";auto_increment:false"
 			}
