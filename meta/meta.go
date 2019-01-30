@@ -83,7 +83,7 @@ const (
 	sqlNullString            = "sql.NullString"
 	gureguNulljsonRawMessage = "*json.RawMessage"
 	sqlNulljsonRawMessage    = "*json.RawMessage"
-	gureguNullTime           = "*time.Time"
+	gureguNullTime           = "null.Time"
 	golangTime               = "*time.Time"
 	gureguNullBool           = "null.Bool"
 	sqlNullBool              = "sql.NullBool"
