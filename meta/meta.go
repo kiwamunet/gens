@@ -171,10 +171,12 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		if mysqlType["primary"] == "PRI" {
 			primary = ";primary_key"
 		}
+		columnType := fmt.Sprintf("type:%s", mysqlType["columnType"])
 
 		if mysqlType["primary"] == "PRI" && valueType == "int" {
 			if strings.Contains(mysqlType["extra"], "auto_increment") {
 				primary = primary + ";auto_increment:true"
+				columnType = ""
 				if gureguTypes {
 					valueType = gureguNullInt
 				} else {
@@ -184,6 +186,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 				primary = primary + ";auto_increment:false"
 			}
 		}
+
 		index := ""
 		if strings.ToLower(mysqlType["index"]) == strings.ToLower(fieldName) {
 			index = ";index"
@@ -205,7 +208,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 
 		var annotations []string
 		if gormAnnotation == true {
-			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s%s;type:%s%s%s\"", key, primary, index, mysqlType["columnType"], notNull, defaultValue))
+			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s%s;%s%s%s\"", key, primary, index, columnType, notNull, defaultValue))
 		}
 		if jsonAnnotation == true {
 			annotations = append(annotations, fmt.Sprintf("json:\"%s\"", key))
