@@ -17,6 +17,7 @@ var (
     _ = json.Decoder{}
 )
 
+{{.Enum}}
 
 type {{.StructName}} struct {
     {{range .Fields}}{{.}}

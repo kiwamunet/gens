@@ -1,19 +1,25 @@
 package meta
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"strings"
+	"text/template"
 	"unicode"
 
 	"github.com/guregu/null"
+	gtmpl "github.com/kiwamunet/gens/template"
+	"github.com/knq/snaker"
 )
 
 type ModelInfo struct {
 	PackageName     string
+	Enum            string
 	StructName      string
 	ShortStructName string
 	TableName       string
@@ -99,9 +105,11 @@ func GenerateStruct(db *sql.DB, databaseName string, tableName string, structNam
 		return &ModelInfo{}, err
 	}
 
-	fields := generateFieldsTypes(db, *columnDataTypes, 0, jsonAnnotation, gormAnnotation, gureguTypes)
+	fields, enum := generateFieldsTypes(db, *columnDataTypes, 0, jsonAnnotation, gormAnnotation, gureguTypes)
+
 	return &ModelInfo{
 		PackageName:     pkgName,
+		Enum:            enum,
 		StructName:      structName,
 		TableName:       tableName,
 		ShortStructName: strings.ToLower(string(structName[0])),
@@ -147,8 +155,9 @@ func getColumnsFromMysqlTable(db *sql.DB, databaseName, tableName string) (*map[
 }
 
 // Generate fields string
-func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int, jsonAnnotation bool, gormAnnotation bool, gureguTypes bool) []string {
+func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int, jsonAnnotation bool, gormAnnotation bool, gureguTypes bool) ([]string, string) {
 
+	enumStr := ""
 	keys := make([]string, 0, len(obj))
 	for key := range obj {
 		keys = append(keys, key)
@@ -172,6 +181,11 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 			primary = ";primary_key"
 		}
 		columnType := fmt.Sprintf("type:%s", mysqlType["columnType"])
+
+		if strings.Contains(mysqlType["columnType"], "enum") {
+			log.Println("enum attayo")
+			enumStr = createEnum(key, enumStr, mysqlType["columnType"])
+		}
 
 		if mysqlType["primary"] == "PRI" && valueType == "int" {
 			if strings.Contains(mysqlType["extra"], "auto_increment") {
@@ -229,7 +243,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 	for i := 1; i < len(m)+1; i++ {
 		fields = append(fields, m[i])
 	}
-	return fields
+	return fields, enumStr
 }
 
 func sqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool) string {
@@ -319,4 +333,50 @@ func fmtFieldName(s string) string {
 		}
 	}
 	return string(runes)
+}
+
+type EnumInfo struct {
+	Type   string
+	Member []string
+}
+
+func createEnum(typeStr string, enumStr string, columnEnum string) string {
+	columnEnum = strings.Replace(columnEnum, "enum(", "", 1)
+	columnEnum = strings.Replace(columnEnum, ")", "", 1)
+	columnEnum = strings.Replace(columnEnum, "'", "", -1)
+	columnEnums := strings.Split(columnEnum, ",")
+
+	typeStr = strings.ToUpper(typeStr[:1]) + typeStr[1:]
+	enumInfo := &EnumInfo{
+		Type:   typeStr,
+		Member: columnEnums,
+	}
+
+	t, err := getTemplate(gtmpl.EnumTmpl)
+	if err != nil {
+		fmt.Println("Error in loading model template: " + err.Error())
+		return enumStr
+	}
+	var buf bytes.Buffer
+	err = t.Execute(&buf, enumInfo)
+	if err != nil {
+		fmt.Println("Error in rendering model: " + err.Error())
+		return enumStr
+	}
+	return enumStr + buf.String()
+}
+func getTemplate(t string) (*template.Template, error) {
+	var funcMap = template.FuncMap{
+		"title":       strings.Title,
+		"toLower":     strings.ToLower,
+		"toSnakeCase": snaker.CamelToSnake,
+	}
+
+	tmpl, err := template.New("model").Funcs(funcMap).Parse(t)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tmpl, nil
 }
