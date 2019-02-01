@@ -169,13 +169,13 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		mysqlType := obj[key]
 
 		nullable := false
-		nullStr := "NOT NULL"
+		nullStr := ";NOT NULL"
 		if mysqlType["nullable"] == "YES" {
 			nullable = true
-			nullStr = "NULL"
+			nullStr = ";NULL"
 		}
 
-		valueType := sqlTypeToGoType(mysqlType["value"], nullable, gureguTypes)
+		valueType := sqlTypeToGoType(mysqlType["value"], nullable, gureguTypes, fmt.Sprintf("%v_%v", strings.ToUpper(key[:1])+key[1:], tableName))
 
 		primary := ""
 		if mysqlType["primary"] == "PRI" {
@@ -207,11 +207,10 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		}
 
 		defaultValue := ""
-		if mysqlType["columnDefault"] == "" {
-			mysqlType["columnDefault"] = "NULL"
+		if mysqlType["columnDefault"] != "" {
+			defaultValue = fmt.Sprintf(" DEFAULT %s", mysqlType["columnDefault"])
 		}
 
-		defaultValue = fmt.Sprintf(" DEFAULT %s", mysqlType["columnDefault"])
 		if mysqlType["extra"] != "" && mysqlType["extra"] != "auto_increment" {
 			defaultValue = fmt.Sprintf("%s %s", defaultValue, mysqlType["extra"])
 		}
@@ -220,7 +219,11 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 
 		var annotations []string
 		if gormAnnotation == true {
-			annotations = append(annotations, fmt.Sprintf("gorm:%s \"column:%s%s%s;%s%s\"", nullStr, key, primary, index, columnType, defaultValue))
+			if columnType[5:9] == "enum" { //type:enum('ALLOW','DISABLE')
+				annotations = append(annotations, fmt.Sprintf("sql:\"%s\"", columnType)) //`json:"ecosystem" sql:"type:ENUM('NONE','APPLYING','COMPLETE')"`
+			} else {
+				annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s%s%s;%s%s\"", key, nullStr, primary, index, columnType, defaultValue))
+			}
 		}
 		if jsonAnnotation == true {
 			annotations = append(annotations, fmt.Sprintf("json:\"%s\"", key))
@@ -248,7 +251,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 	return fields, enumStr
 }
 
-func sqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool) string {
+func sqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool, enumStr string) string {
 	switch mysqlType {
 	case "int", "smallint", "mediumint":
 		if nullable {
@@ -274,7 +277,7 @@ func sqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool) string {
 			return sqlNullInt
 		}
 		return golangInt64
-	case "char", "enum", "varchar", "mediumtext", "text", "tinytext":
+	case "char", "varchar", "mediumtext", "text", "tinytext":
 		if nullable {
 			if gureguTypes {
 				return gureguNullString
@@ -282,6 +285,14 @@ func sqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool) string {
 			return sqlNullString
 		}
 		return "string"
+	case "enum":
+		if nullable {
+			if gureguTypes {
+				return enumStr
+			}
+			return enumStr
+		}
+		return enumStr
 	case "longtext":
 		if nullable {
 			if gureguTypes {
