@@ -104,7 +104,7 @@ func GenerateStruct(db *sql.DB, databaseName string, tableName string, structNam
 		return &ModelInfo{}, err
 	}
 
-	fields, enum := generateFieldsTypes(db, *columnDataTypes, 0, jsonAnnotation, gormAnnotation, gureguTypes)
+	fields, enum := generateFieldsTypes(db, *columnDataTypes, 0, jsonAnnotation, gormAnnotation, gureguTypes, tableName)
 
 	return &ModelInfo{
 		PackageName:     pkgName,
@@ -154,7 +154,7 @@ func getColumnsFromMysqlTable(db *sql.DB, databaseName, tableName string) (*map[
 }
 
 // Generate fields string
-func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int, jsonAnnotation bool, gormAnnotation bool, gureguTypes bool) ([]string, string) {
+func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int, jsonAnnotation bool, gormAnnotation bool, gureguTypes bool, tableName string) ([]string, string) {
 
 	enumStr := ""
 	keys := make([]string, 0, len(obj))
@@ -184,7 +184,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		columnType := fmt.Sprintf("type:%s", mysqlType["columnType"])
 
 		if strings.Contains(mysqlType["columnType"], "enum") {
-			enumStr = createEnum(key, enumStr, mysqlType["columnType"])
+			enumStr = createEnum(key, enumStr, mysqlType["columnType"], tableName)
 		}
 
 		if mysqlType["primary"] == "PRI" && valueType == "int" {
@@ -338,11 +338,12 @@ func fmtFieldName(s string) string {
 }
 
 type EnumInfo struct {
+	Key    string
 	Type   string
 	Member []string
 }
 
-func createEnum(typeStr string, enumStr string, columnEnum string) string {
+func createEnum(typeStr string, enumStr string, columnEnum string, tableName string) string {
 	columnEnum = strings.Replace(columnEnum, "enum(", "", 1)
 	columnEnum = strings.Replace(columnEnum, ")", "", 1)
 	columnEnum = strings.Replace(columnEnum, "'", "", -1)
@@ -350,6 +351,7 @@ func createEnum(typeStr string, enumStr string, columnEnum string) string {
 
 	typeStr = strings.ToUpper(typeStr[:1]) + typeStr[1:]
 	enumInfo := &EnumInfo{
+		Key:    tableName,
 		Type:   typeStr,
 		Member: columnEnums,
 	}

@@ -1,16 +1,16 @@
 package template
 
 var EnumTmpl = `type {{.Type}} int
-{{$type := .Type}}
+{{$type := .Type}}{{$key := .Key}}
 const (
-	{{range $index, $var := .Member}}{{ if eq $index 0 }}{{$var}}_{{$type}} {{$type}} = iota
-	{{else}}{{$var}}_{{$type}}
+	{{range $index, $var := .Member}}{{ if eq $index 0 }}{{$var}}_{{$key}} {{$type}} = iota
+	{{else}}{{$var}}_{{$key}}
 	{{end}}{{end}}
 )
 	
 func (em {{.Type}}) String() string {
 	switch em {
-	{{range $index, $var := .Member}}case {{$var}}_{{$type}}:
+	{{range $index, $var := .Member}}case {{$var}}_{{$key}}:
 		return "{{$var}}"
 	{{end}}default:
 		return "UNKNOWN"
