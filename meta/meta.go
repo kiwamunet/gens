@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"sort"
 	"strconv"
 	"strings"
@@ -170,8 +169,10 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		mysqlType := obj[key]
 
 		nullable := false
+		nullStr := "NOT NULL"
 		if mysqlType["nullable"] == "YES" {
 			nullable = true
+			nullStr = "NULL"
 		}
 
 		valueType := sqlTypeToGoType(mysqlType["value"], nullable, gureguTypes)
@@ -183,7 +184,6 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		columnType := fmt.Sprintf("type:%s", mysqlType["columnType"])
 
 		if strings.Contains(mysqlType["columnType"], "enum") {
-			log.Println("enum attayo")
 			enumStr = createEnum(key, enumStr, mysqlType["columnType"])
 		}
 
@@ -207,18 +207,20 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		}
 
 		defaultValue := ""
-		if mysqlType["columnDefault"] != "" {
-			defaultValue = fmt.Sprintf(" DEFAULT %s", mysqlType["columnDefault"])
-			if mysqlType["extra"] != "" && mysqlType["extra"] != "auto_increment" {
-				defaultValue = fmt.Sprintf("%s %s", defaultValue, mysqlType["extra"])
-			}
+		if mysqlType["columnDefault"] == "" {
+			mysqlType["columnDefault"] = "NULL"
+		}
+
+		defaultValue = fmt.Sprintf(" DEFAULT %s", mysqlType["columnDefault"])
+		if mysqlType["extra"] != "" && mysqlType["extra"] != "auto_increment" {
+			defaultValue = fmt.Sprintf("%s %s", defaultValue, mysqlType["extra"])
 		}
 
 		pos, _ := strconv.Atoi(mysqlType["position"])
 
 		var annotations []string
 		if gormAnnotation == true {
-			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s%s;%s%s\"", key, primary, index, columnType, defaultValue))
+			annotations = append(annotations, fmt.Sprintf("gorm:%s \"column:%s%s%s;%s%s\"", nullStr, key, primary, index, columnType, defaultValue))
 		}
 		if jsonAnnotation == true {
 			annotations = append(annotations, fmt.Sprintf("json:\"%s\"", key))
