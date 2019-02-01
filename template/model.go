@@ -4,6 +4,7 @@ var ModelTmpl = `package {{.PackageName}}
 
 import (
     "database/sql"
+    "database/sql/driver"
     "encoding/json"
     "time"
 
@@ -15,6 +16,7 @@ var (
     _ = sql.LevelDefault
     _ = null.Bool{}
     _ = json.Decoder{}
+    _ = driver.NamedValue{} 
 )
 
 {{.Enum}}
