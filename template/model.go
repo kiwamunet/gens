@@ -19,8 +19,6 @@ var (
     _ = driver.NamedValue{} 
 )
 
-{{.Enum}}
-
 type {{.StructName}} struct {
     {{range .Fields}}{{.}}
     {{end}}

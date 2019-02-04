@@ -18,7 +18,6 @@ import (
 
 type ModelInfo struct {
 	PackageName     string
-	Enum            string
 	StructName      string
 	ShortStructName string
 	TableName       string
@@ -104,11 +103,10 @@ func GenerateStruct(db *sql.DB, databaseName string, tableName string, structNam
 		return &ModelInfo{}, err
 	}
 
-	fields, enum := generateFieldsTypes(db, *columnDataTypes, 0, jsonAnnotation, gormAnnotation, gureguTypes, tableName)
+	fields := generateFieldsTypes(db, *columnDataTypes, 0, jsonAnnotation, gormAnnotation, gureguTypes, tableName)
 
 	return &ModelInfo{
 		PackageName:     pkgName,
-		Enum:            enum,
 		StructName:      structName,
 		TableName:       tableName,
 		ShortStructName: strings.ToLower(string(structName[0])),
@@ -154,9 +152,8 @@ func getColumnsFromMysqlTable(db *sql.DB, databaseName, tableName string) (*map[
 }
 
 // Generate fields string
-func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int, jsonAnnotation bool, gormAnnotation bool, gureguTypes bool, tableName string) ([]string, string) {
+func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int, jsonAnnotation bool, gormAnnotation bool, gureguTypes bool, tableName string) []string {
 
-	enumStr := ""
 	keys := make([]string, 0, len(obj))
 	for key := range obj {
 		keys = append(keys, key)
@@ -183,9 +180,9 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 		}
 		columnType := fmt.Sprintf("type:%s", mysqlType["columnType"])
 
-		if strings.Contains(mysqlType["columnType"], "enum") {
-			enumStr = createEnum(key, enumStr, mysqlType["columnType"], tableName)
-		}
+		// if strings.Contains(mysqlType["columnType"], "enum") {
+		// 	enumStr = createEnum(key, enumStr, mysqlType["columnType"], tableName)
+		// }
 
 		if mysqlType["primary"] == "PRI" && valueType == "int" {
 			if strings.Contains(mysqlType["extra"], "auto_increment") {
@@ -221,11 +218,11 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 
 		var annotations []string
 		if gormAnnotation == true {
-			if columnType[5:9] == "enum" { //type:enum('ALLOW','DISABLE')
-				annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s\" sql:\"%s\"", key, columnType)) //`json:"ecosystem" sql:"type:ENUM('NONE','APPLYING','COMPLETE')"`
-			} else {
-				annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s%s%s;%s%s\"", key, nullStr, primary, index, columnType, defaultValue))
-			}
+			//if columnType[5:9] == "enum" { //type:enum('ALLOW','DISABLE')
+			//	annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s\" sql:\"%s\"", key, columnType)) //`json:"ecosystem" sql:"type:ENUM('NONE','APPLYING','COMPLETE')"`
+			//} else {
+			annotations = append(annotations, fmt.Sprintf("gorm:\"column:%s%s%s%s;%s%s\"", key, nullStr, primary, index, columnType, defaultValue))
+			//}
 		}
 		if jsonAnnotation == true {
 			annotations = append(annotations, fmt.Sprintf("json:\"%s\"", key))
@@ -250,7 +247,7 @@ func generateFieldsTypes(db *sql.DB, obj map[string]map[string]string, depth int
 	for i := 1; i < len(m)+1; i++ {
 		fields = append(fields, m[i])
 	}
-	return fields, enumStr
+	return fields
 }
 
 func sqlTypeToGoType(mysqlType string, nullable bool, gureguTypes bool, enumStr string) string {
