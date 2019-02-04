@@ -4,7 +4,7 @@ var EnumTmpl = `{{$type := .Type}}{{$key := .Key}}
 type {{.Type}}_{{$key}} int64
 
 const (
-	{{range $index, $var := .Member}}{{ if eq $index 0 }}{{$var}}_{{$key}} {{$type}}_{{$key}} = iota
+	{{range $index, $var := .Member}}{{ if eq $index 0 }}{{$var}}_{{$key}} {{$type}}_{{$key}} = iota + 1
 	{{else}}{{$var}}_{{$key}}
 	{{end}}{{end}}
 )
